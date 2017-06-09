@@ -22,42 +22,61 @@ var config = {
 var app = firebase.initializeApp(config);
 
 var db = admin.database();
-var ref = db.ref('/Setttings/trentishii1993');
+var users = ['trentishii1993'];
+var i;
 
-var schedule = require('node-schedule');
+for (i in users) {
+	var ref = db.ref('/Setttings/' + users[i]);
 
-ref.once("value", function(snap) {
-	var val = snap.val();
-	var wakeMin = val.wakeMin;
-	var wakeHour = val.wakeHour;
-	var sleepMin = val.sleepMin;
-	var sleepHour = val.sleepHour;
+	var schedule = require('node-schedule');
+	var notification1 = null;
+	var notification2 = null;
+	var notification3 = null;
+	var notification4 = null;
+	var notification5 = null;
 
-	var wake = new Date(2017, 0, 1, wakeHour, wakeMin);
-	var sleep = new Date(2017, 0, 1, sleepHour, sleepMin);
-	if (sleep < wake) {
-		sleep.setDate(sleep.getDate() + 1);
-	}
-	var msec = sleep - wake;
-	var thirdmsecs = Math.floor(msec / 3);
+	ref.on("value", function(snap) {
+		if (notification1 != null && notification2 != null && notification3 != null && notification4 != null && notification5 != null) {
+			notification1.cancel();
+			notification2.cancel();
+			notification3.cancel();
+			notification4.cancel();
+			notification5.cancel();
+			console.log("JOBS CANCELLED");
+		} 
+		var val = snap.val();
+		var wakeMin = val.wakeMin;
+		var wakeHour = val.wakeHour;
+		var sleepMin = val.sleepMin;
+		var sleepHour = val.sleepHour;
 
-	var wholeDay = msecConversion(msec);
-	var thirdDay = msecConversion(thirdmsecs);
-	console.log("Third: " + thirdDay);
-	
+		var wake = new Date(2017, 0, 1, wakeHour, wakeMin);
+		var sleep = new Date(2017, 0, 1, sleepHour, sleepMin);
+		if (sleep < wake) {
+			sleep.setDate(sleep.getDate() + 1);
+		}
+		var msec = sleep - wake;
+		var thirdmsecs = Math.floor(msec / 3);
 
-	sendNotification("TAKE TESTS", "Click to take LEEDS test", wakeHour, wakeMin, "OPEN_LEEDS");
-	sendNotification("TAKE TESTS AND COMPLETE BEDTIME DIARY", "Click to complete tests and diary", sleepHour, sleepMin, "OPEN_PANAS");
-	var firstThird = addTime(wakeHour, thirdDay[0], wakeMin, thirdDay[1]);
-	var secondThird = addTime(firstThird[0], thirdDay[0], firstThird[1], thirdDay[1]);
-	sendNotification("TAKE FIRST TESTS", "Click to take PAM and PVT", firstThird[0], firstThird[1], "OPEN_PAM");
-	sendNotification("TAKE SECOND TESTS", "Click to take PAM and PVT", secondThird[0], secondThird[1], "OPEN_PAM");
-	sendNotification("TAKE LAST TESTS", "Click to take PAM and PVT", sleepHour, sleepMin, "OPEN_PAM");
-	console.log(wakeHour + " " + wakeMin);
-	console.log(firstThird);
-	console.log(secondThird);
-	console.log(sleepHour + " " + sleepMin);
-});
+		var wholeDay = msecConversion(msec);
+		var thirdDay = msecConversion(thirdmsecs);
+		console.log("One-Third of Awake Time is " + thirdDay[0] + " hours " + thirdDay[1] + " minutes");
+		
+
+		notification1 = sendNotification("TAKE TESTS", "Click to take LEEDS test", wakeHour, wakeMin, "OPEN_LEEDS");
+		notification2 = sendNotification("TAKE TESTS AND COMPLETE BEDTIME DIARY", "Click to complete tests and diary", sleepHour, sleepMin, "OPEN_PANAS");
+		var firstThird = addTime(wakeHour, thirdDay[0], wakeMin, thirdDay[1]);
+		var secondThird = addTime(firstThird[0], thirdDay[0], firstThird[1], thirdDay[1]);
+		notification3 = sendNotification("TAKE FIRST TESTS", "Click to take PAM and PVT", firstThird[0], firstThird[1], "OPEN_PAM");
+		notification4 = sendNotification("TAKE SECOND TESTS", "Click to take PAM and PVT", secondThird[0], secondThird[1], "OPEN_PAM");
+		notification5 = sendNotification("TAKE LAST TESTS", "Click to take PAM and PVT", sleepHour, sleepMin, "OPEN_PAM");
+		console.log("User Wakeup Time: " + wakeHour + ":" + wakeMin);
+		console.log("User First Tests of the Day: " + firstThird[0] + ":" + firstThird[1]);
+		console.log("User Second Tests of the Day: " + secondThird[0] + ":" + secondThird[1]);
+		console.log("User Sleep Time: " + sleepHour + ":" + sleepMin);
+	});
+}
+
 
 function addTime(hour1, hour2, min1, min2) {
 	var newMin = min1 + min2;
@@ -106,4 +125,5 @@ function sendNotification(title, body, hour, min, click) {
 	    		console.log("Error sending message:", error);
 	  	});
 	});
+	return j;
 }
